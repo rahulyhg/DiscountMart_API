@@ -593,6 +593,7 @@ class DbHandler {
         if ($result) {
             // task row created
             // now assign the task to user
+            // now assign the task to user
             $new_coupon_id = $this->conn->insert_id;
            
             if ($new_coupon_id) {
@@ -736,30 +737,73 @@ WHERE s.city_id = c.id AND s.category_id =sc.id AND s.city_id=$city_id AND s.cat
 
     }
 	
+	
+	function buildTree(array $elements, $parentId = 0)
+	{
+			$branch = array();
+		foreach($elements as $element)
+        {
+        if ($element['parent'] == $parentId)
+            {
+            $children = buildTree($elements, $element['id']);
+            if ($children)
+                {
+                $element['subCat'] = $children;
+                }
+
+            $branch[] = $element;
+            }
+        }
+
+    return $branch;
+    }
+	
+	
+
+	
  public function  getShoppingCategories() {
     
     	 
-
-
     		$stmt = $this->conn->prepare("SELECT * from shopping_categories  
-    				WHERE status = 1 ORDER BY position  ASC");
+    				WHERE status = 1 AND parent_id = 0 ORDER BY position  ASC");
     		$stmt->execute();
     		$result = $stmt->get_result();
     		$stmt->close();
-                
-                
+             
     		$item_array = array();
+			
+
     
     		while($row = $result->fetch_assoc())
     		{
+				
+				
     			
-    			
-    			foreach( $row as $key=>$value )
+				
+				$stmt1 = $this->conn->prepare("SELECT * from shopping_categories  
+    				WHERE status = 1 AND parent_id = ".$row['id']." ORDER BY position  ASC");
+				$stmt1->execute();
+				$result1 = $stmt1->get_result();
+				$stmt1->close();
+				$sub_cat = array();
+				
+				 while($row1 = $result1->fetch_assoc())
+				{
+					array_push($sub_cat, $row1);   
+				}
+				
+				//array_push($item_array, $row1);    
+		
+
+				foreach( $row as $key=>$value )
     			{
     				$item_temp[$key] = $value;
     			}
+				$item_temp['subcategories'] = $sub_cat;
     			 
     			array_push($item_array,$item_temp);
+    			
+
     			 
     		}
     
