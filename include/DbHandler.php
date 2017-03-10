@@ -111,6 +111,38 @@ class DbHandler {
             return FALSE;
         }
     }
+    
+    
+    
+public function AddAddress($user_id,$fname,$lname, $address, $phone,$pincode)
+            {
+       
+        $response = array();
+
+ 
+            $stmt = $this->conn->prepare("INSERT INTO addresses"
+                    . "(`user_id`,`fname`, `lname`, `address`, `phone`, `pincode`)"
+                    . " values($user_id,'$fname','$lname','$address', '$phone', '$pincode')");
+      
+
+             $result = $stmt->execute();
+
+            $stmt->close();
+            
+            
+
+            // Check for successful insertion
+            if ($result) {
+                // User successfully inserted
+                return ADDRESS_ADDED_SUCCESSFULLY;
+            } else {
+                // Failed to create user
+                return ADDRESS_ADDITION_FAILED;
+            }
+        
+
+        return $response;
+    }
 
     /**
      * Checking for duplicate user by email address
@@ -633,6 +665,122 @@ class DbHandler {
     }
 	
     
+public function  getAddresses($user_id) {
+    
+    	 
+
+
+    		$stmt = $this->conn->prepare("SELECT a.*
+ FROM addresses a, users u
+WHERE a.user_id = u.id AND a.user_id=$user_id AND a.status = 1 
+ ORDER BY a.id  ASC");
+    		$stmt->execute();
+    		$result = $stmt->get_result();
+    		$stmt->close();
+                
+                
+    		$item_array = array();
+    
+    		while($row = $result->fetch_assoc())
+    		{
+    			
+    			
+    			foreach( $row as $key=>$value )
+    			{
+    				$item_temp[$key] = $value;
+    			}
+    			 
+    			array_push($item_array,$item_temp);
+    			 
+    		}
+    
+
+    		return $item_array;
+    
+
+    }
+    
+    
+    public function placeOrder($user_id,$address_id,$products){
+        
+        $products_arr = json_decode($products, TRUE);
+
+        $total_amount = 0;
+        $discount = 0;
+         foreach ($products_arr as $product)
+        {
+            $total_amount = $total_amount+(($product['price'])*$product['quantity']);
+            $discount = $discount+ (($product['mrp']-$product['price'])*$product['quantity']);
+
+        }
+        
+        
+        
+        
+       $stmt = $this->conn->prepare("INSERT INTO `orders`(`user_id`, `address_id`, `amount`, `discount`)"
+               . " VALUES ($user_id,$address_id,$total_amount,$discount)");
+       
+       
+
+        $result = $stmt->execute();
+        $stmt->close();
+
+        if ($result) {
+            // task row created
+            // now assign the task to user
+            // now assign the task to user
+            $new_order_id= $this->conn->insert_id;
+           
+            if ($new_order_id) {
+                // task created successfully
+                return $new_order_id;
+            } else {
+                // task failed to create
+                return NULL;
+            }
+        } else {
+            // task failed to create
+            return NULL;
+        }
+        
+    }
+    
+    public function placeOrderDetails($order_id,$products){
+        
+        
+        $products_arr = json_decode($products, TRUE);
+
+//        print_r($products_arr);
+        
+        
+        
+        foreach ($products_arr as $product)
+        {
+            $product_id = $product['id'];
+            $price = $product['price'];
+            $quantity = $product['quantity'];
+
+            $stmt = $this->conn->prepare("INSERT INTO `order_details`(`order_id`, `product_id`, `price`, `quantity`) "
+                    . "VALUES ($order_id,$product_id,$price,$quantity)");
+       
+            $result = $stmt->execute();
+        }
+        
+        
+
+        $stmt->close();
+
+        if ($result) {
+ 
+            return ORDER_PLACED_SUCCESSFULLY;
+        } else {
+            // task failed to create
+            return NULL;
+        }
+        
+    }
+    
+    
     public function  getServiceProviders($city_id,$category_id) {
     
     	 
@@ -837,6 +985,50 @@ WHERE s.city_id = c.id AND s.category_id =sc.id AND s.city_id=$city_id AND s.cat
     		$stmt->execute();
     		$result = $stmt->get_result();
     		$stmt->close();
+                
+                
+    		$item_array = array();
+    
+    		while($row = $result->fetch_assoc())
+    		{
+    			
+    			
+    			foreach( $row as $key=>$value )
+    			{
+    				$item_temp[$key] = $value;
+    			}
+    			 
+    			array_push($item_array,$item_temp);
+    			 
+    		}
+    
+
+    		return $item_array;
+    
+
+    }
+    
+    
+    public function  getProducts($category_id,$retailer_id)
+            {
+    
+    	 
+            if($category_id != 'all' && $retailer_id == 'all'){
+                
+                
+                $stmt = $this->conn->prepare("SELECT p.*
+ FROM products p, shopping_categories sc
+WHERE p.category_id = sc.id AND p.category_id = ".$category_id." 
+ AND p.status = 1 
+ ORDER BY name  ASC");
+    		$stmt->execute();
+    		$result = $stmt->get_result();
+    		$stmt->close();
+                
+                
+            }
+
+    		
                 
                 
     		$item_array = array();

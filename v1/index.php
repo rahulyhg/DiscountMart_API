@@ -67,7 +67,7 @@ $app->post('/register', function() use ($app) {
 
             // reading post params
             $fname = $app->request->post('fname');
-            $lname = $app->request->post('fname');
+            $lname = $app->request->post('lname');
             $email = $app->request->post('email');
             $password = $app->request->post('password');
             $phone = $app->request->post('phone');
@@ -165,8 +165,86 @@ $app->post('/login', function() use ($app) {
  * url /tasks          
  */
         
+$app->post('/place_order','authenticate', function() use ($app) {
+            // check for required params
+            verifyRequiredParams(array('products','address_id'));
+
+            $Responce = new Responce();
+			global $user_id;
+
+            // reading post params
+            $products = $app->request->post('products');
+            $address_id = $app->request->post('address_id');
+            $amount = $app->request->post('amount');
+            $discount = $app->request->post('discount');
+
+
+
+
+           // print_r($products_arr);
+      
+            $db = new DbHandler();
+            $new_order_id = $db->placeOrder($user_id,$address_id,$products);
+
+            $result = $db->placeOrderDetails($new_order_id,$products);
+
+            if ($result == ORDER_PLACED_SUCCESSFULLY) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("Order Placed");
+             
+
+            } else{
+                
+                $Responce->setError(true);
+                $Responce->setMessage("Oops! An error occurred while placing an order");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+
+            // echo json response
+        });
+                
         
-        
+$app->post('/add_address','authenticate', function() use ($app) {
+            // check for required params
+            verifyRequiredParams(array('fname', 'lname','address', 'phone', 'pincode'));
+
+            $Responce = new Responce();
+			global $user_id;
+
+            // reading post params
+            $fname = $app->request->post('fname');
+            $lname = $app->request->post('lname');
+            $address = $app->request->post('address');
+            $phone = $app->request->post('phone');
+            $pincode = $app->request->post('pincode');
+
+            
+      
+            $db = new DbHandler();
+            $user = $db->AddAddress($user_id,$fname,$lname, $address, $phone,$pincode);
+
+            if ($user == ADDRESS_ADDED_SUCCESSFULLY) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("Address Added");
+             
+
+            } else if ($user == ADDRESS_ADDITION_FAILED) {
+                
+                $Responce->setError(true);
+                $Responce->setMessage("Oops! An error occurred while adding address");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+
+            // echo json response
+        });
         
         
         
@@ -194,6 +272,36 @@ $app->get('/get_adsliders/','authenticate',
 			} else {
 				$Responce->setError(true);
 				$Responce->setMessage("true");
+		
+			}
+
+			echoRespnse(201, $Responce->setArray());
+});
+
+$app->get('/get_addresses/:id_user','authenticate',
+
+		function($id_user)
+		{
+			global $user_id;
+
+
+			$response = array();
+			$db = new DbHandler();
+
+			$Responce = new Responce();
+
+			// fetch task
+			$result = $db->getAddresses($id_user);
+
+			if ($result != NULL) {
+				$Responce->setError(false);
+				$Responce->setMessage("false");
+				$Responce->setData('addresses',$result);
+
+
+			} else {
+				$Responce->setError(true);
+				$Responce->setMessage("Address book is emply, please add new address.");
 		
 			}
 
@@ -343,6 +451,68 @@ $app->get('/get_retailers/:city_id/:offer_category_id','authenticate',
 				$Responce->setError(false);
 				$Responce->setMessage("false");
 				$Responce->setData('retailers',$result);
+
+
+			} else {
+				$Responce->setError(false);
+				$Responce->setMessage("No Data Available");
+		
+			}
+
+			echoRespnse(201, $Responce->setArray());
+});
+
+
+$app->get('/get_retailers/:city_id/:offer_category_id','authenticate',
+
+		function($city_id,$offer_category_id)
+		{
+			global $user_id;
+
+
+			$response = array();
+			$db = new DbHandler();
+
+			$Responce = new Responce();
+
+			// fetch task
+			$result = $db->getRetailers($city_id,$offer_category_id);
+
+			if ($result != NULL) {
+				$Responce->setError(false);
+				$Responce->setMessage("false");
+				$Responce->setData('retailers',$result);
+
+
+			} else {
+				$Responce->setError(false);
+				$Responce->setMessage("No Data Available");
+		
+			}
+
+			echoRespnse(201, $Responce->setArray());
+});
+
+
+$app->get('/get_products/:category_id/:retailer_id','authenticate',
+
+		function($category_id,$retailer_id)
+		{
+			global $user_id;
+
+
+			$response = array();
+			$db = new DbHandler();
+
+			$Responce = new Responce();
+
+			// fetch task
+			$result = $db->getProducts($category_id,$retailer_id);
+
+			if ($result != NULL) {
+				$Responce->setError(false);
+				$Responce->setMessage("false");
+				$Responce->setData('products',$result);
 
 
 			} else {
