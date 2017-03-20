@@ -3,9 +3,9 @@
  * Database configuration
  */
 define('DB_USERNAME', 'root');
-define('DB_PASSWORD', '');
+define('DB_PASSWORD', 'JIO7q28KXjLb');
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'ichiapp');
+define('DB_NAME', 'discountmart');
 
 define('USER_CREATED_SUCCESSFULLY', 0);
 define('USER_CREATE_FAILED', 1);

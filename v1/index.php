@@ -17,18 +17,46 @@ $user_id = NULL;
  * Adding Middle Layer to authe   nticate every request
  * Checking if the request has valid api key in the 'Authorization' header
  */
+ 
+ 
+ 
+ function apache_request_headers() {
+  $arh = array();
+  $rx_http = '/\AHTTP_/';
+  foreach($_SERVER as $key => $val) {
+    if( preg_match($rx_http, $key) ) {
+      $arh_key = preg_replace($rx_http, '', $key);
+      $rx_matches = array();
+      // do some nasty string manipulations to restore the original letter case
+      // this should work in most cases
+      $rx_matches = explode('_', $arh_key);
+      if( count($rx_matches) > 0 and strlen($arh_key) > 2 ) {
+        foreach($rx_matches as $ak_key => $ak_val) $rx_matches[$ak_key] = ucfirst($ak_val);
+        $arh_key = implode('-', $rx_matches);
+      }
+      $arh[$arh_key] = $val;
+    }
+  }
+  return( $arh );
+}
+
+
 function authenticate(\Slim\Route $route) {
     // Getting request headers
+	
+	//print_r( $_SERVER);
     $headers = apache_request_headers();
+
+	//print_r($headers);
     $response = array();
     $app = \Slim\Slim::getInstance();
 
     // Verifying Authorization Header
-    if (isset($headers['Authorization'])) {
+    if (isset($headers['AUTHORIZATION'])) {
         $db = new DbHandler();
 
         // get the api key
-        $api_key = $headers['Authorization'];
+        $api_key = $headers['AUTHORIZATION'];
         // validating api key
         if (!$db->isValidApiKey($api_key)) {
             // api key is not present in users table
@@ -252,7 +280,10 @@ $app->get('/get_adsliders/','authenticate',
 
 		function()
 		{
+
+
 			global $user_id;
+			
 
 
 			$response = array();
@@ -263,10 +294,13 @@ $app->get('/get_adsliders/','authenticate',
 			// fetch task
 			$result = $db->getAdSliders();
 
-			if ($result != NULL) {
+                        $resultRetailerCategories = $db->getRetailerCategories();
+
+			if ($result != NULL && $resultRetailerCategories !=NULL) {
 				$Responce->setError(false);
 				$Responce->setMessage("false");
 				$Responce->setData('ads',$result);
+				$Responce->setData('retailer_categories',$resultRetailerCategories);
 
 
 			} else {

@@ -822,27 +822,46 @@ WHERE s.city_id = c.id AND s.category_id =sc.id AND s.city_id=$city_id AND s.cat
      public function  getServiceCategories() {
     
     	 
-
-
-    		$stmt = $this->conn->prepare("SELECT * from service_categories  
-    				WHERE status = 1 ORDER BY name  ASC");
+$stmt = $this->conn->prepare("SELECT * from service_categories  
+    				WHERE status = 1 AND parent_id = 0 ORDER BY parent_id  ASC");
     		$stmt->execute();
     		$result = $stmt->get_result();
     		$stmt->close();
-                
-                
+             
     		$item_array = array();
+			
+
     
     		while($row = $result->fetch_assoc())
     		{
+				
+				
     			
-    			
-    			foreach( $row as $key=>$value )
+				
+				$stmt1 = $this->conn->prepare("SELECT * from service_categories  
+    				WHERE status = 1 AND parent_id = ".$row['id']." ORDER BY parent_id  ASC");
+				$stmt1->execute();
+				$result1 = $stmt1->get_result();
+				$stmt1->close();
+				$sub_cat = array();
+				
+				 while($row1 = $result1->fetch_assoc())
+				{
+					array_push($sub_cat, $row1);   
+				}
+				
+				//array_push($item_array, $row1);    
+		
+
+				foreach( $row as $key=>$value )
     			{
     				$item_temp[$key] = $value;
     			}
+				$item_temp['subcategories'] = $sub_cat;
     			 
     			array_push($item_array,$item_temp);
+    			
+
     			 
     		}
     
@@ -1086,6 +1105,40 @@ WHERE p.category_id = sc.id AND p.category_id = ".$category_id."
     
 
     }
+    
+    public function  getRetailerCategories() {
+    
+    	 
+
+
+    		$stmt = $this->conn->prepare("SELECT * from retailer_categories  
+    				WHERE status = 1");
+    		$stmt->execute();
+    		$result = $stmt->get_result();
+    		$stmt->close();
+                
+                
+    		$item_array = array();
+    
+    		while($row = $result->fetch_assoc())
+    		{
+    			
+    			
+    			foreach( $row as $key=>$value )
+    			{
+    				$item_temp[$key] = $value;
+    			}
+    			 
+    			array_push($item_array,$item_temp);
+    			 
+    		}
+    
+
+    		return $item_array;
+    
+
+    }
+    
     public function  getCategories() {
     
     	 
