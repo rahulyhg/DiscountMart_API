@@ -19,26 +19,64 @@ $user_id = NULL;
  */
  
  
- 
- function apache_request_headers() {
-  $arh = array();
-  $rx_http = '/\AHTTP_/';
-  foreach($_SERVER as $key => $val) {
-    if( preg_match($rx_http, $key) ) {
-      $arh_key = preg_replace($rx_http, '', $key);
-      $rx_matches = array();
-      // do some nasty string manipulations to restore the original letter case
-      // this should work in most cases
-      $rx_matches = explode('_', $arh_key);
-      if( count($rx_matches) > 0 and strlen($arh_key) > 2 ) {
-        foreach($rx_matches as $ak_key => $ak_val) $rx_matches[$ak_key] = ucfirst($ak_val);
-        $arh_key = implode('-', $rx_matches);
-      }
-      $arh[$arh_key] = $val;
-    }
-  }
-  return( $arh );
-}
+// 
+// function apache_request_headerss() {
+//  $arh = array();
+//  $rx_http = '/\AHTTP_/';
+//  foreach($_SERVER as $key => $val) {
+//    if( preg_match($rx_http, $key) ) {
+//      $arh_key = preg_replace($rx_http, '', $key);
+//      $rx_matches = array();
+//      // do some nasty string manipulations to restore the original letter case
+//      // this should work in most cases
+//      $rx_matches = explode('_', $arh_key);
+//      if( count($rx_matches) > 0 and strlen($arh_key) > 2 ) {
+//        foreach($rx_matches as $ak_key => $ak_val) $rx_matches[$ak_key] = ucfirst($ak_val);
+//        $arh_key = implode('-', $rx_matches);
+//      }
+//      $arh[$arh_key] = $val;
+//    }
+//  }
+//  return( $arh );
+//}
+
+
+//function authenticate(\Slim\Route $route) {
+//    // Getting request headers
+//	
+//	//print_r( $_SERVER);
+//    $headers = apache_request_headers();
+//
+//	print_r($headers);
+//    $response = array();
+//    $app = \Slim\Slim::getInstance();
+//
+//    // Verifying Authorization Header
+//    if (isset($headers['AUTHORIZATION'])) {
+//        $db = new DbHandler();
+//
+//        // get the api key
+//        $api_key = $headers['AUTHORIZATION'];
+//        // validating api key
+//        if (!$db->isValidApiKey($api_key)) {
+//            // api key is not present in users table
+//            $response["error"] = true;
+//            $response["message"] = "Access Denied. Invalid Api key";
+//            echoRespnse(401, $response);
+//            $app->stop();
+//        } else {
+//            global $user_id;
+//            // get user primary key id
+//            $user_id = $db->getUserId($api_key);
+//        }
+//    } else {
+//        // api key is missing in header
+//        $response["error"] = true;
+//        $response["message"] = "Api key is misssing";
+//        echoRespnse(400, $response);
+//        $app->stop();
+//    }
+//}
 
 
 function authenticate(\Slim\Route $route) {
@@ -47,16 +85,15 @@ function authenticate(\Slim\Route $route) {
 	//print_r( $_SERVER);
     $headers = apache_request_headers();
 
-	//print_r($headers);
     $response = array();
     $app = \Slim\Slim::getInstance();
 
     // Verifying Authorization Header
-    if (isset($headers['AUTHORIZATION'])) {
+    if (isset($headers['Authorization'])) {
         $db = new DbHandler();
 
         // get the api key
-        $api_key = $headers['AUTHORIZATION'];
+        $api_key = $headers['Authorization'];
         // validating api key
         if (!$db->isValidApiKey($api_key)) {
             // api key is not present in users table
@@ -78,6 +115,150 @@ function authenticate(\Slim\Route $route) {
     }
 }
 
+
+
+$app->get('/read_records/:page', 
+//        'authenticate',
+        function($page){
+	
+	
+		
+			
+            global $user_id;
+	
+            $Responce = new Responce();
+            $db = new DbHandler();
+
+            // fetching all user tasks
+            $result = $db->readRecords($page) ;
+
+
+
+            echo $result;
+        });
+        
+$app->post('/delete_records/:page', 
+//        'authenticate',
+        function($page) use ($app){
+	
+
+            global $user_id;
+            
+            $id = $app->request->post('id');
+
+
+            $Responce = new Responce();
+            $db = new DbHandler();
+
+            // fetching all user tasks
+            $result = $db->deleteRecords($page,$id) ;
+
+
+
+            echo $result;
+        });
+        
+        
+$app->post('/add_record/:page', 
+//        'authenticate',
+        function($page) use ($app){
+	
+
+            if($page == 'adslider'){
+                
+            global $user_id;
+            
+
+
+            $Responce = new Responce();
+            $db = new DbHandler();
+
+            // fetching all user tasks
+            $result = $db->addRecords($page,$app->request->post(),$_FILES) ;
+
+
+
+            echo $result;
+            }
+    
+            
+        });
+        
+$app->post('/update_record/:page', 
+//        'authenticate',
+        function($page) use ($app){
+	
+
+            if($page == 'adslider'){
+                
+            global $user_id;
+            
+
+
+            $Responce = new Responce();
+            $db = new DbHandler();
+
+            // fetching all user tasks
+            $result = $db->updateRecords($page,$app->request->post(),$_FILES) ;
+
+
+
+            echo $result;
+            }
+    
+            
+        });
+
+$app->post('/get_record_details/:page', 
+//        'authenticate',
+        function($page) use ($app){
+	
+
+            if($page == 'adslider'){
+                
+            global $user_id;
+                        
+            $id = $app->request->post('id');
+
+            $Responce = new Responce();
+            $db = new DbHandler();
+
+            // fetching all user tasks
+            $result = $db->getRecords($page,$id) ;
+
+
+
+            echo $result;
+            }
+    
+            
+        });
+        
+$app->post('/update_record/:page', 
+//        'authenticate',
+        function($page) use ($app){
+	
+
+            if($page == 'adslider'){
+                
+            global $user_id;
+            
+
+
+            $Responce = new Responce();
+            $db = new DbHandler();
+
+            // fetching all user tasks
+            $result = $db->updateRecords($page,$app->request->post(),$_FILES) ;
+
+
+
+            echo $result;
+            }
+    
+            
+        });
+        
 /**
  * ----------- METHODS WITHOUT AUTHENTICATION ---------------------------------
  */
@@ -311,6 +492,71 @@ $app->get('/get_adsliders/','authenticate',
 
 			echoRespnse(201, $Responce->setArray());
 });
+
+
+$app->post('/add_adslider','authenticate', function() use ($app) {
+            // check for required params
+    
+
+                            
+            verifyRequiredParams(array('name'));
+
+            $Responce = new Responce();
+			global $user_id;
+                        
+
+            // reading post params
+            $name = $app->request->post('name');
+           
+            $image = $app->request->post('image');
+            $image = $_FILES['image'];
+
+            
+      
+            $db = new DbHandler();
+            $user = $db->addAdSlider($name,$image);
+            
+            
+
+            if ($user == ADDRESS_ADDED_SUCCESSFULLY) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("Adslider Added");
+
+             
+
+            } else if ($user == ADDRESS_ADDITION_FAILED) {
+                $Responce->setError(true);
+                $Responce->setMessage("Oops! An error occurred while adding address");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+
+        });
+        
+        
+
+$app->delete('/delete_adslider/:id', 'authenticate', function($id) use($app) {
+            global $user_id;
+
+            $db = new DbHandler();
+            $Responce = new Responce();
+            $result = $db->deleteAdSlider($id);
+            if ($result) {
+                // task deleted successfully
+                $Responce->setError(false);
+                $Responce->setMessage("Slider Deleted");
+                
+            } else {
+                // task failed to delete
+                $Responce->setError(true);
+		$Responce->setMessage("Slider failed to delete. Please try again!");
+           
+            }
+			echoRespnse(201, $Responce->setArray());
+        });
 
 $app->get('/get_addresses/:id_user','authenticate',
 

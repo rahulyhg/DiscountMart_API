@@ -95,6 +95,8 @@ $app->post('/register', function() use ($app) {
             echoRespnse(201, $response);
         });
  */
+
+
  
 $app->post('/register', function() use ($app) {
             // check for required params

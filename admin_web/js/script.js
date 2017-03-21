@@ -1,5 +1,5 @@
 // Add Record
-
+path_to_index = "../v1/";
 function handleFileSelect()
   {               
     if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
@@ -36,6 +36,9 @@ function addRecord(page) {
     
     if(page == 'adslider'){
         
+   var function_name = 'add_record/';
+   var url = path_to_index+function_name+page;
+       
 
     var fd = new FormData();
     var file_data = $('input[type="file"]')[0].files; // for multiple files
@@ -46,14 +49,23 @@ function addRecord(page) {
      fd.append('name',$("#name").val());
     
     $.ajax({
-        url: 'ajax/addRecord.php/?page='+page,
+        url: url,
         data: fd,
         contentType: false,
         processData: false,
         type: 'POST',
         success: function(data){
             console.log(data);
-                alert('s');
+                    
+            $("#add_new_record_modal").modal("hide");
+
+        // read records again
+        readRecords(page);
+
+        // clear fields from the popup
+        $("#name").val("");
+
+                
         }
     });
 
@@ -87,10 +99,12 @@ function addRecord(page) {
 // READ records
 function readRecords(page) {
     
-    //alert("ajax/readRecords.php/?page="+page);
+    
+     var function_name = 'read_records/';
+       var url = path_to_index+function_name+page;
     
     
-    $.get("ajax/readRecords.php/?page="+page, {},
+    $.get(url, {},
     
     function (data, status)
     {
@@ -101,11 +115,12 @@ function readRecords(page) {
 
 function DeleteRecord(page,id) {
     
-
+     var function_name = 'delete_records/';
+       var url = path_to_index+function_name+page;
 
             var conf = confirm("Are you sure, do you really want to delete this Slider?");
     if (conf == true) {
-        $.post("ajax/deleteRecord.php/?page="+page, {
+        $.post(url, {
                 id: id
             },
             function (data, status) {
@@ -142,26 +157,32 @@ function GetRecordDetails(page,id) {
 
     if(page == 'adslider'){
         
+
+       var BASE_IMAGE_DIR= 'http://192.168.1.100/discountmart_web/admin_web/images/';
+
+       var function_name = 'get_record_details/';
+       var url = path_to_index+function_name+page;
+       
+       
          $("#hidden_user_id").val(id);
+
          
-    $.post("ajax/readRecordDetails.php/?page="+page, {
+    $.post(url, {
             id: id
         },
         function (data, status) {
             // PARSE json data
             var adslider = JSON.parse(data);
             // Assing existing values to the modal popup fields
-                    
-            alert(adslider.image);
+                        
+            var src = $("#update_image_prev").attr('src'); 
+//            alert(src);
+            $("#update_image_prev").attr("src",BASE_IMAGE_DIR+adslider.image);
 
-            
             $("#update_name").val(adslider.name);
             $("#update_image").val(adslider.image);
-//            $('#update_image_prev').attr("src",adslider.image);
-
-        $("#update_image_prev").attr('src', $("#update_image_prev")
-           .attr('src') + '?' + Math.random() );
-   
+            
+    
 
         }
     );
@@ -192,29 +213,67 @@ function GetUserDetails(id) {
     $("#update_user_modal").modal("show");
 }
 
-function UpdateUserDetails() {
+function UpdateRecord(page) {
     // get values
-    var first_name = $("#update_first_name").val();
-    var last_name = $("#update_last_name").val();
-    var email = $("#update_email").val();
+//    var name = $("#name").val();
+//    var image = $("#image").val();
 
+   var function_name = 'update_record/';
+   var url = path_to_index+function_name+page;
+   
+   
+    var fd = new FormData();
+    var file_data = $('input[type="file"]')[0].files; // for multiple files
+alert(file_data.length);
+    for(var i = 0;i<file_data.length;i++){
+                
+
+        fd.append("image", file_data[i]);
+    }
+ 
     // get hidden field value
     var id = $("#hidden_user_id").val();
+    
+     fd.append('name',$("#update_name").val());
+          fd.append('id',id);
 
-    // Update the details by requesting to the server using ajax
-    $.post("ajax/updateUserDetails.php", {
-            id: id,
-            first_name: first_name,
-            last_name: last_name,
-            email: email
-        },
-        function (data, status) {
-            // hide modal popup
-            $("#update_user_modal").modal("hide");
-            // reload Users by using readRecords();
-            readRecords();
+     
+ 
+    
+        $.ajax({
+        url: url,
+        data: fd,
+        contentType: false,
+        processData: false,
+        type: 'POST',
+        success: function(data){
+            console.log(data);
+                    
+//            $("#update_user_modal").modal("hide");
+
+        // read records again
+        readRecords(page);
+
+                
         }
-    );
+    });
+    
+    
+//
+//    // Update the details by requesting to the server using ajax
+//    $.post("ajax/updateUserDetails.php", {
+//            id: id,
+//            first_name: first_name,
+//            last_name: last_name,
+//            email: email
+//        },
+//        function (data, status) {
+//            // hide modal popup
+//            $("#update_user_modal").modal("hide");
+//            // reload Users by using readRecords();
+//            readRecords();
+//        }
+//    );
 }
 
 $(document).ready(function () {

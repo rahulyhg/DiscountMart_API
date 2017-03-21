@@ -7,9 +7,12 @@
  * @author Ravi Tamada
  * @link URL Tutorial link
  */
-class DbHandler {
 
-    private $conn;
+
+
+    class DbHandler {
+
+    public  $conn;
 
     function __construct() {
         require_once dirname(__FILE__) . '/DbConnect.php';
@@ -17,6 +20,258 @@ class DbHandler {
         $db = new DbConnect();
         $this->conn = $db->connect();
     }
+    
+    
+    public function  readRecords($page) {
+    
+    	 
+
+        if ($page == 'adslider') {
+
+
+            // Design initial table header 
+            $data = '<table class="table table-bordered table-striped">
+						<tr>
+							<th>ID.</th>
+							<th>Name</th>
+							<th>Image</th>
+							<th>Status</th>
+							<th>Action</th>
+
+						</tr>';
+
+
+            $stmt = $this->conn->prepare("SELECT * FROM adsliders");
+
+            $stmt->execute();
+
+            $result = $stmt->get_result();
+
+
+            if ($result->num_rows > 0) {
+
+                while ($row = $result->fetch_assoc()) {
+
+                    $data .= '<tr>
+				<td>' . $row['id'] . '</td>
+				<td>' . $row['name'] . '</td>
+                                <td><img src=' . BASE_URL_IMAGES . '' . $row['image'] . ' alt="" style="width:200px; height:auto;"></td>
+				<td>' . $row['status'] . '</td>
+				<td>
+					<button onclick="GetRecordDetails(`' . $page . '`,' . $row['id'] . ')" class="btn btn-warning">Update</button>
+					<button onclick="DeleteRecord(`adslider`,' . $row['id'] . ')" class="btn btn-danger">Delete</button>
+				
+
+</td>
+				
+				
+                                
+
+    		</tr>';
+                }
+                $stmt->close();
+            } else {
+                $data .= '<tr><td colspan="6">Records not found!</td></tr>';
+            }
+
+            $data .= '</table>';
+
+            return $data;
+        }
+
+        
+        
+    	
+
+    }
+    
+    
+     public function  deleteRecords($page,$id) 
+     {
+    
+   
+        if ($page == 'adslider') {
+
+            
+        $stmt = $this->conn->prepare("DELETE  FROM adsliders WHERE id = $id");
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
+            
+        }
+
+    }
+    
+    
+       public function  getRecords($page,$id) 
+     {
+    
+   
+        if ($page == 'adslider') {
+
+            
+        $stmt = $this->conn->prepare("SELECT * FROM adsliders WHERE id = $id");
+         $stmt->execute();
+               
+        $result = $stmt->get_result();
+
+        $response = array();
+        if ($result->num_rows > 0) {
+            while ($row = $result ->fetch_assoc()) {
+                $response = $row;
+            }
+        } else {
+            $response['status'] = 200;
+            $response['message'] = "Data not found!";
+        }
+        // display JSON data
+        return json_encode($response);
+        
+ 
+        }
+
+    }
+    
+    
+     public function addRecords($page, $data, $files) {
+
+
+        if ($page == 'adslider') {
+
+
+
+            $name = $data['name'];
+
+   
+
+            $imgFile = $files['image']['name'];
+            $tmp_dir = $files['image']['tmp_name'];
+            $imgSize = $files['image']['size'];
+
+            $errMSG = "";
+
+            if (empty($name)) {
+                $errMSG = "Please Enter Username.";
+            } else {
+
+                $folder_name = "imagesliders/";
+
+                $upload_dir = BASE_IMAGE_DIR . $folder_name; // upload directory
+
+                $imgExt = strtolower(pathinfo($imgFile, PATHINFO_EXTENSION)); // get image extension
+                // valid image extensions
+                $valid_extensions = array('jpeg', 'jpg', 'png', 'gif'); // valid extensions
+                // rename uploading image
+                $userpic = rand(1000, 1000000) . "." . $imgExt;
+
+                $imagename = $folder_name . $userpic;
+                // allow valid image file formats
+                if (in_array($imgExt, $valid_extensions)) {
+                    // Check file size '5MB'
+                    if ($imgSize < 5000000) {
+                        move_uploaded_file($tmp_dir, $upload_dir . $userpic);
+                    } else {
+                        $errMSG = "Sorry, your file is too large.";
+                    }
+                } else {
+                    $errMSG = "Sorry, only JPG, JPEG, PNG & GIF files are allowed.";
+                }
+            }
+
+
+
+            $stmt = $this->conn->prepare("INSERT INTO adsliders(name, image)"
+                    . " VALUES('$name', '$imagename' )");
+
+            
+            $result = $stmt->execute();
+
+            $stmt->close();
+            
+            if ($result) {
+                return "1 Record Added!";            
+
+            } else {
+                return "No Record Added!";            
+            }
+            
+       
+            
+        }
+    }
+    
+    
+    
+    
+        public function updateRecords($page, $data, $files) {
+
+
+        if ($page == 'adslider') {
+
+
+
+            $name = $data['name'];
+            $id = $data['id'];
+
+   
+
+            $imgFile = $files['image']['name'];
+            $tmp_dir = $files['image']['tmp_name'];
+            $imgSize = $files['image']['size'];
+
+            $errMSG = "";
+
+            if (empty($name)) {
+                $errMSG = "Please Enter Username.";
+            } else {
+
+                $folder_name = "imagesliders/";
+
+                $upload_dir = BASE_IMAGE_DIR . $folder_name; // upload directory
+
+                $imgExt = strtolower(pathinfo($imgFile, PATHINFO_EXTENSION)); // get image extension
+                // valid image extensions
+                $valid_extensions = array('jpeg', 'jpg', 'png', 'gif'); // valid extensions
+                // rename uploading image
+                $userpic = rand(1000, 1000000) . "." . $imgExt;
+
+                $imagename = $folder_name . $userpic;
+                // allow valid image file formats
+                if (in_array($imgExt, $valid_extensions)) {
+                    // Check file size '5MB'
+                    if ($imgSize < 5000000) {
+                        move_uploaded_file($tmp_dir, $upload_dir . $userpic);
+                    } else {
+                        $errMSG = "Sorry, your file is too large.";
+                    }
+                } else {
+                    $errMSG = "Sorry, only JPG, JPEG, PNG & GIF files are allowed.";
+                }
+            }
+
+
+
+            $stmt = $this->conn->prepare("UPDATE adsliders SET(name, image) "
+                    . " VALUES('$name', '$imagename' ) WHERE id = $id");
+
+            
+            $result = $stmt->execute();
+
+            $stmt->close();
+            
+            if ($result) {
+                return "1 Record Added!";            
+
+            } else {
+                return "No Record Added!";            
+            }
+            
+       
+            
+        }
+    }
+    
 
     /* ------------- `users` table method ------------------ */
 
@@ -143,6 +398,74 @@ public function AddAddress($user_id,$fname,$lname, $address, $phone,$pincode)
 
         return $response;
     }
+    
+    
+     public function addAdSlider($name, $image) {
+
+
+
+
+
+        // print_r($image);
+   
+
+            $imgFile = $image['name'];
+            $tmp_dir = $image['tmp_name'];
+            $imgSize = $image['size'];
+
+            $errMSG = "";
+
+            if (empty($name)) {
+                $errMSG = "Please Enter Username.";
+            } else {
+
+                $folder_name = "imagesliders/";
+
+                $upload_dir = BASE_IMAGE_DIR . $folder_name; // upload directory
+
+                $imgExt = strtolower(pathinfo($imgFile, PATHINFO_EXTENSION)); // get image extension
+                // valid image extensions
+                $valid_extensions = array('jpeg', 'jpg', 'png', 'gif'); // valid extensions
+                // rename uploading image
+                $userpic = rand(1000, 1000000) . "." . $imgExt;
+
+                $imagename = $folder_name . $userpic;
+                // allow valid image file formats
+                if (in_array($imgExt, $valid_extensions)) {
+                    // Check file size '5MB'
+                    if ($imgSize < 5000000) {
+                        move_uploaded_file($tmp_dir, $upload_dir . $userpic);
+                    } else {
+                        $errMSG = "Sorry, your file is too large.";
+                    }
+                } else {
+                    $errMSG = "Sorry, only JPG, JPEG, PNG & GIF files are allowed.";
+                }
+            }
+
+
+
+            $stmt = $this->conn->prepare("INSERT INTO adsliders(name, image)"
+                    . " VALUES('$name', '$imagename' )");
+
+            
+            $result = $stmt->execute();
+
+            $stmt->close();
+            
+            if ($result) {
+                return ADSLIDER_ADDED_SUCCESSFULLY;            
+
+            } else {
+                return ADSLIDER_ADDITION_FAILED;            
+            }
+            
+       
+            
+        
+    }
+    
+    
 
     /**
      * Checking for duplicate user by email address
@@ -1104,6 +1427,14 @@ WHERE p.category_id = sc.id AND p.category_id = ".$category_id."
     		return $item_array;
     
 
+    }
+    
+    public function deleteAdSlider($id) {
+        $stmt = $this->conn->prepare("DELETE t FROM adsliders t WHERE id = $id");
+        $stmt->execute();
+        $num_affected_rows = $stmt->affected_rows;
+        $stmt->close();
+        return $num_affected_rows > 0;
     }
     
     public function  getRetailerCategories() {

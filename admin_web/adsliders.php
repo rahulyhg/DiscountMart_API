@@ -95,8 +95,8 @@
 
                 <div class="form-group">
                     <label for="image">Image</label>
-                    <p><img src="" id="update_image_prev" height="150" width="150" /></p>
-        	<input class="form-control" type="file"   placeholder="Image" id="update_image" name="user_image" accept="image/*" />
+                    <!--<p><img src=""  id="update_image_prev" height="150" width="150" /></p>-->
+                    <input type="file" id="image" name="image" accept="image/*"  class="form-control" /></td>
                 
                 </div>
 
@@ -104,8 +104,9 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="UpdateUserDetails()" >Save Changes</button>
+                <button type="button" class="btn btn-primary" onclick="UpdateRecord('adslider')" >Save Changes</button>
                 <input type="hidden" id="hidden_user_id">
+
             </div>
         </div>
     </div>
