@@ -89,7 +89,7 @@ function authenticate(\Slim\Route $route) {
     $app = \Slim\Slim::getInstance();
 
     // Verifying Authorization Header
-    if (isset($headers['Authorization'])) {
+    if (isset($headers['Authorization']))   {
         $db = new DbHandler();
 
         // get the api key
@@ -476,12 +476,49 @@ $app->get('/get_adsliders/','authenticate',
 			$result = $db->getAdSliders();
 
                         $resultRetailerCategories = $db->getRetailerCategories();
+                        $resultCities = $db->getCities();
 
 			if ($result != NULL && $resultRetailerCategories !=NULL) {
 				$Responce->setError(false);
 				$Responce->setMessage("false");
 				$Responce->setData('ads',$result);
 				$Responce->setData('retailer_categories',$resultRetailerCategories);
+				$Responce->setData('cities',$resultCities);
+
+
+			} else {
+				$Responce->setError(true);
+				$Responce->setMessage("true");
+		
+			}
+
+			echoRespnse(201, $Responce->setArray());
+});
+
+$app->get('/get_orders/:id','authenticate',
+
+		function($id)
+		{
+
+
+			global $user_id;
+			
+
+
+			$response = array();
+			$db = new DbHandler();
+
+			$Responce = new Responce();
+
+			// fetch task
+			$result = $db->getOrders($id);
+
+
+			if ($result != NULL && $result !=NULL) {
+				$Responce->setError(false);
+				$Responce->setMessage("false");
+				$Responce->setData('orders',$result);
+
 
 
 			} else {
@@ -536,8 +573,354 @@ $app->post('/add_adslider','authenticate', function() use ($app) {
 
         });
         
-        
+$app->post('/create_retailer','authenticate', function() use ($app) {
+            // check for required params
+    
 
+                            
+            verifyRequiredParams(array('category_id','city_id','name','address'));
+
+            $Responce = new Responce();
+			global $user_id;
+                        
+
+            // reading post params
+            $category_id = $app->request->post('category_id');
+            $city_id = $app->request->post('city_id');
+            $name = $app->request->post('name');
+            $address = $app->request->post('address');
+            $description = $app->request->post('description');
+            $phone = $app->request->post('phone');
+     
+            //$images = $app->request->post('image');
+            $images = $_FILES;
+
+            
+      
+            $db = new DbHandler();
+            $result = $db->createRetailer($category_id, $city_id, $name, $address, $description, $phone, $images);
+            
+            
+
+            if ($result) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("Retailer Added");
+
+             
+
+            } else  {
+                $Responce->setError(true);
+                $Responce->setMessage("Oops! An error occurred while adding address");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+
+        });
+        
+        
+$app->post('/create_retailer_category', 'authenticate', function() use ($app) {
+            // check for required params
+               verifyRequiredParams(array('name','parent_id'));
+               
+
+            $Responce = new Responce();
+            global $user_id;
+                        
+
+            // reading post params
+            $name = $app->request->post('name');
+            $ParentId = $app->request->post('parent_id');
+
+            $db = new DbHandler();
+            $result = $db->createRetailerCategory($ParentId,$name);
+            
+            if ($result) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("Retailer Category Added.");
+
+            
+            } else{
+                $Responce->setError(true);
+                $Responce->setMessage("Oops! An error occurred while adding category");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+        });
+
+$app->post('/create_city', 'authenticate', function() use ($app) {
+            // check for required params
+               verifyRequiredParams(array('name','parent_id'));
+               
+
+            $Responce = new Responce();
+            global $user_id;
+                        
+
+            // reading post params
+            $name = $app->request->post('name');
+            $ParentId = $app->request->post('parent_id');
+
+            $db = new DbHandler();
+            $result = $db->createCity($ParentId,$name);
+            
+            if ($result) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("City Added.");
+
+            
+            } else{
+                $Responce->setError(true);
+                $Responce->setMessage("Oops! An error occurred while adding city");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+        });
+$app->post('/create_rating', 'authenticate', function() use ($app) {
+            // check for required params
+               verifyRequiredParams(array('user_id','product_varient_id','rating'));
+               
+
+            $Responce = new Responce();
+            global $user_id;
+                        
+
+            // reading post params
+            $user_id = $app->request->post('user_id');
+            $product_varient_id = $app->request->post('product_varient_id');
+            $rating = $app->request->post('rating');
+
+
+            $db = new DbHandler();
+            $result = $db-> createRating($user_id, $product_varient_id,$rating) ;
+            
+            if ($result) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("You Rated this.");
+
+            
+            } else{
+                $Responce->setError(true);
+                $Responce->setMessage("Oops! An error occurred while adding rating");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+        });  		
+		
+$app->post('/create_service_category', 'authenticate', function() use ($app) {
+            // check for required params
+               verifyRequiredParams(array('name','parent_id'));
+               
+
+            $Responce = new Responce();
+            global $user_id;
+                        
+
+            // reading post params
+            $name = $app->request->post('name');
+            $ParentId = $app->request->post('parent_id');
+
+            $db = new DbHandler();
+            $result = $db->createServiceCategory($ParentId,$name);
+            
+            if ($result) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("Service Category Added.");
+
+            
+            } else{
+                $Responce->setError(true);
+                $Responce->setMessage("Oops! An error occurred while adding category");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+        });       
+        
+    
+$app->delete('/delete_retailer_category/:id', 'authenticate', function($id) use ($app) {
+            // check for required params
+               
+
+            $Responce = new Responce();
+            global $user_id;
+                        
+
+
+            $db = new DbHandler();
+            $result = $db->deleteRetailerCategory($id);
+            
+            if ($result) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("Retailer Category Deleted.");
+
+            
+            } else{
+                $Responce->setError(true);
+                $Responce->setMessage("Oops! An error occurred while deleting category");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+        });
+$app->delete('/delete_city/:id', 'authenticate', function($id) use ($app) {
+            // check for required params
+               
+
+            $Responce = new Responce();
+            global $user_id;
+                        
+
+
+            $db = new DbHandler();
+            $result = $db->deleteCity($id);
+            
+            if ($result) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("City Deleted.");
+
+            
+            } else{
+                $Responce->setError(true);
+                $Responce->setMessage("Oops! An error occurred while deleting city");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+        });
+$app->delete('/delete_service_category/:id', 'authenticate', function($id) use ($app) {
+            // check for required params
+               
+
+            $Responce = new Responce();
+            global $user_id;
+                        
+
+
+            $db = new DbHandler();
+            $result = $db->deleteServiceCategory($id);
+            
+            if ($result) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("Service Category Deleted.");
+
+            
+            } else{
+                $Responce->setError(true);
+                $Responce->setMessage("Oops! An error occurred while deleting category");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+        });
+
+        
+$app->put('/update_retailer_category/:id', 'authenticate', function($id) use ($app) {
+            // check for required params
+               
+
+            $Responce = new Responce();
+            global $user_id;
+                        
+            $name = $app->request->post('name');
+
+
+            $db = new DbHandler();
+            $result = $db->updateRetailerCategory($id,$name);
+            
+            if ($result) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("Retailer Category Updated.");
+
+            
+            } else{
+                $Responce->setError(true);
+                $Responce->setMessage("Oops! An error occurred while updating category");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+        });
+
+$app->put('/update_city/:id', 'authenticate', function($id) use ($app) {
+            // check for required params
+               
+
+            $Responce = new Responce();
+            global $user_id;
+                        
+            $name = $app->request->post('name');
+
+
+            $db = new DbHandler();
+            $result = $db->updateCity($id,$name);
+            
+            if ($result) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("City Updated.");
+
+            
+            } else{
+                $Responce->setError(true);
+                $Responce->setMessage("Oops! An error occurred while updating city");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+        });
+		
+$app->put('/update_service_category/:id', 'authenticate', function($id) use ($app) {
+            // check for required params
+               
+
+            $Responce = new Responce();
+            global $user_id;
+                        
+            $name = $app->request->post('name');
+
+
+            $db = new DbHandler();
+            $result = $db->updateServiceCategory($id,$name);
+            
+            if ($result) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("Service Category Updated.");
+
+            
+            } else{
+                $Responce->setError(true);
+                $Responce->setMessage("Oops! An error occurred while updating category");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+        });
+        
 $app->delete('/delete_adslider/:id', 'authenticate', function($id) use($app) {
             global $user_id;
 
@@ -558,6 +941,27 @@ $app->delete('/delete_adslider/:id', 'authenticate', function($id) use($app) {
 			echoRespnse(201, $Responce->setArray());
         });
 
+$app->delete('/delete_retailer/:id', 'authenticate', function($id) use($app) {
+            global $user_id;
+
+            $db = new DbHandler();
+            $Responce = new Responce();
+            $result = $db->deleteRetailer($id);
+            if ($result) {
+                // task deleted successfully
+                $Responce->setError(false);
+                $Responce->setMessage("Retailer Deleted");
+                
+            } else {
+                // task failed to delete
+                $Responce->setError(true);
+		$Responce->setMessage("Retailer failed to delete. Please try again!");
+           
+            }
+			echoRespnse(201, $Responce->setArray());
+        });
+		
+		
 $app->get('/get_addresses/:id_user','authenticate',
 
 		function($id_user)
@@ -638,6 +1042,36 @@ $app->get('/get_service_categories/','authenticate',
 				$Responce->setError(false);
 				$Responce->setMessage("false");
 				$Responce->setData('categories',$result);
+
+
+			} else {
+				$Responce->setError(true);
+				$Responce->setMessage("true");
+		
+			}
+
+			echoRespnse(201, $Responce->setArray());
+});
+
+$app->get('/get_cities/','authenticate',
+
+		function()
+		{
+			global $user_id;
+
+
+			$response = array();
+			$db = new DbHandler();
+
+			$Responce = new Responce();
+
+			// fetch task
+			$result = $db->getCities();
+
+			if ($result != NULL) {
+				$Responce->setError(false);
+				$Responce->setMessage("false");
+				$Responce->setData('cities',$result);
 
 
 			} else {
@@ -1119,6 +1553,8 @@ function verifyRequiredParams($required_fields) {
         parse_str($app->request()->getBody(), $request_params);
     }
     foreach ($required_fields as $field) {
+        
+        
         if (!isset($request_params[$field]) || strlen(trim($request_params[$field])) <= 0) {
             $error = true;
             $error_fields .= $field . ', ';
