@@ -373,6 +373,79 @@ $app->post('/login', function() use ($app) {
  * method GET
  * url /tasks          
  */
+       
+$app->post('/update_password','authenticate', function() use ($app) {
+            // check for required params
+            verifyRequiredParams(array('old_pass','new_pass'));
+
+            $Responce = new Responce();
+			global $user_id;
+
+            $old_pass = $app->request->post('old_pass');
+            $new_pass = $app->request->post('new_pass');
+
+
+
+
+           // print_r($products_arr);
+      
+            $db = new DbHandler();
+
+            $result = $db->updatePassword($user_id,$old_pass, $new_pass);
+
+            if ($result) {
+                
+                $Responce->setError(false);
+                $Responce->setMessage("Password Updated");
+             
+
+            } else{
+                
+                $Responce->setError(true);
+                $Responce->setMessage("Error occurred while updating password. Please confirm your old password");
+                
+                
+            } 
+            
+               echoRespnse(201, $Responce->setArray());
+
+            // echo json response
+        });
+        
+ $app->get('/get_otp/:email',  function($email) use($app)
+    {
+            global $user_id;
+            $db = new DbHandler();
+            $Responce = new Responce();
+            
+            $tempArray = array();
+            // fetching all user tasks
+         
+            $result = $db->getOtp($email);
+            $Responce ->setError(false);
+            $Responce ->setMessage("OTP for reset password has been successfully sent to your email id");            
+            $tempArray["otp"] = array();
+          if($result)
+		  {            
+            foreach($result as $post) 
+			{
+     	        $tmp = array();
+				$tmp["otp"] = $post["otp"];              
+              //$tmp["createdAt"] = $post["created_at"];
+                array_push($tempArray["otp"], $tmp); 
+			}
+                $responce ->setData("otp", $tempArray["otp"]);
+		  }		  
+		  else
+		  {
+			   $responce ->setError(true);
+			   $responce ->setMessage("No such email registered with Squibit");
+			   $responce ->setData("otp", $tempArray["otp"]);
+		  }
+            echoRespnse(200, $responce->setArray());
+        });
+		       
+        
         
 $app->post('/place_order','authenticate', function() use ($app) {
             // check for required params
@@ -474,15 +547,20 @@ $app->get('/get_adsliders/','authenticate',
 
 			// fetch task
 			$result = $db->getAdSliders();
-
                         $resultRetailerCategories = $db->getRetailerCategories();
                         $resultCities = $db->getCities();
+                        $resultServiceCategories = $db->getServiceCategories();
+                        $resultShoppingCategories = $db->getShoppingCategories();
+
 
 			if ($result != NULL && $resultRetailerCategories !=NULL) {
 				$Responce->setError(false);
 				$Responce->setMessage("false");
 				$Responce->setData('ads',$result);
 				$Responce->setData('retailer_categories',$resultRetailerCategories);
+                                $Responce->setData('service_categories',$resultServiceCategories);
+                                $Responce->setData('shopping_categories',$resultShoppingCategories);
+
 				$Responce->setData('cities',$resultCities);
 
 
@@ -518,6 +596,41 @@ $app->get('/get_orders/:id','authenticate',
 				$Responce->setError(false);
 				$Responce->setMessage("false");
 				$Responce->setData('orders',$result);
+
+
+
+			} else {
+				$Responce->setError(true);
+				$Responce->setMessage("true");
+		
+			}
+
+			echoRespnse(201, $Responce->setArray());
+});
+
+$app->get('/get_user','authenticate',
+
+		function()
+		{
+
+
+			global $user_id;
+			
+
+
+			$response = array();
+			$db = new DbHandler();
+
+			$Responce = new Responce();
+
+			// fetch task
+			$result = $db->getUser($user_id);
+
+
+			if ($result != NULL && $result !=NULL) {
+				$Responce->setError(false);
+				$Responce->setMessage("false");
+				$Responce->setData('user',$result);
 
 
 
@@ -993,9 +1106,9 @@ $app->get('/get_addresses/:id_user','authenticate',
 });
 
 
-$app->get('/get_service_providers/:city_id/:category_id','authenticate',
+$app->get('/get_user_coupon_history','authenticate',
 
-		function($city_id,$category_id)
+		function()
 		{
 			global $user_id;
 
@@ -1006,7 +1119,37 @@ $app->get('/get_service_providers/:city_id/:category_id','authenticate',
 			$Responce = new Responce();
 
 			// fetch task
-			$result = $db->getServiceProviders($city_id,$category_id);
+			$result = $db->getUserCouponHistory($user_id);
+
+			if ($result != NULL) {
+				$Responce->setError(false);
+				$Responce->setMessage("Coupon history");
+				$Responce->setData('user_coupon_history',$result);
+
+
+			} else {
+				$Responce->setError(true);
+				$Responce->setMessage("No Data Available");
+		
+			}
+
+			echoRespnse(201, $Responce->setArray());
+});
+
+$app->get('/get_service_providers/:city_id/:category_id/:serach_query','authenticate',
+
+		function($city_id,$category_id,$serach_query)
+		{
+			global $user_id;
+
+
+			$response = array();
+			$db = new DbHandler();
+
+			$Responce = new Responce();
+
+			// fetch task
+			$result = $db->getServiceProviders($city_id,$category_id,$serach_query);
 
 			if ($result != NULL) {
 				$Responce->setError(false);
@@ -1146,9 +1289,9 @@ $app->get('/get_offer_categories/','authenticate',
 });
 
 
-$app->get('/get_retailers/:city_id/:offer_category_id','authenticate',
+$app->get('/get_retailers/:city_id/:retailer_category_id/:search_query','authenticate',
 
-		function($city_id,$offer_category_id)
+		function($city_id,$retailer_category_id,$search_query)
 		{
 			global $user_id;
 
@@ -1159,7 +1302,7 @@ $app->get('/get_retailers/:city_id/:offer_category_id','authenticate',
 			$Responce = new Responce();
 
 			// fetch task
-			$result = $db->getRetailers($city_id,$offer_category_id);
+			$result = $db->getRetailers($city_id,$retailer_category_id,$search_query);
 
 			if ($result != NULL) {
 				$Responce->setError(false);
@@ -1199,7 +1342,7 @@ $app->get('/get_retailers/:city_id/:offer_category_id','authenticate',
 
 
 			} else {
-				$Responce->setError(false);
+				$Responce->setError(true);
 				$Responce->setMessage("No Data Available");
 		
 			}
@@ -1208,9 +1351,9 @@ $app->get('/get_retailers/:city_id/:offer_category_id','authenticate',
 });
 
 
-$app->get('/get_products/:category_id/:retailer_id','authenticate',
+$app->get('/get_products/:category_id/:retailer_id/:search_query','authenticate',
 
-		function($category_id,$retailer_id)
+		function($category_id,$retailer_id,$search_query)
 		{
 			global $user_id;
 
@@ -1221,7 +1364,7 @@ $app->get('/get_products/:category_id/:retailer_id','authenticate',
 			$Responce = new Responce();
 
 			// fetch task
-			$result = $db->getProducts($category_id,$retailer_id);
+			$result = $db->getProducts($category_id,$retailer_id,$search_query);
 
 			if ($result != NULL) {
 				$Responce->setError(false);
@@ -1230,7 +1373,7 @@ $app->get('/get_products/:category_id/:retailer_id','authenticate',
 
 
 			} else {
-				$Responce->setError(false);
+				$Responce->setError(true);
 				$Responce->setMessage("No Data Available");
 		
 			}

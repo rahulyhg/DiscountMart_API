@@ -333,7 +333,110 @@ class DbHandler {
             return FALSE;
         }
     }
-
+    
+    public function updatePassword($user_id, $old_pass, $new_pass) {
+		
+		$stmt = $this->conn->prepare("select password_hash from users where id=?");
+        $stmt->bind_param("i",$user_id);
+        $stmt->execute();
+        $stmt->bind_result($password_hash);
+		while($stmt->fetch())
+		{
+			$password_hash1=$password_hash;
+		}
+		
+			$stmt->close();
+			
+			$password_hash_old = PassHash::hash($old_pass);
+			$password_hash_new = PassHash::hash($new_pass);
+			//die("".$password_hash_old);
+			
+					
+			//echo "exist".$password_hash_existing."<br>".$password_hash_old;
+			//die();
+			//echo "exist".$password_hash1."<br>".$password_hash_old;
+		
+		if(PassHash::check_password($password_hash1,$old_pass))
+		{		
+		//die("".$password_hash_new);
+		
+        $stmt1 = $this->conn->prepare("UPDATE users set password_hash = ? where id = ?");
+        $stmt1->bind_param("si",$password_hash_new, $user_id);
+        $stmt1->execute();
+        $num_affected_rows = $stmt1->affected_rows;
+        $stmt1->close();
+        return $num_affected_rows > 0;
+		}
+		else
+		{
+			return null;
+		}
+    }
+    
+    
+    
+  public function getOtp($email) {
+		 $random_num=0;
+		 $contents="";
+		 $email_from="registration@squibit.in";
+		 
+			
+								       $stmt = $this->conn->prepare("SELECT id from users where email= ?");
+									   //die("SELECT id  from category where name= $name");
+									   $stmt->bind_param("s",$email);
+									   $stmt->bind_result($id); 
+									   
+        $post = array();
+        
+        $stmt->execute();
+		if ($stmt->fetch()) 
+		{
+				$random_num=rand(100000,999999);
+				  $contents = "Hi,\n" .
+                        "\n" .
+                        "Greetings!\n" .
+                        "\n" .
+                        "You are just a step away from accessing your Squibit account\n" .
+                        "\n" .
+                        "We have shared a verification code to access your account. \n" .
+                        "\n" .
+                        "Once you have verified the code, you'll be prompted to set a new password immediately. This is to ensure that only you have access to your account.\n" .
+                        "\n" .
+						
+						 "This Verification code (OTP) is valid for 10 minutes only \n" .
+						 
+						  "\n" .
+                        "Your OTP : " . $random_num . "\n" .
+						
+                        "\n" .
+						
+						"This is an automatically generated email – please do not reply to it. If you have any queries regarding your service please contact our customer service through support@squibit.in.\n".
+						"\n" .
+						
+                        "Best Regards, \n" .
+                        "Team Squibit";
+				
+				
+				if(mail($email, "Squibit Account - One Time Password ", $contents,'From: Squibit<'.$email_from.'>'))
+				{
+					//die("hii");
+					$post[] = array("otp" => $random_num);
+				}
+				else
+				{
+					return null;
+				}
+   		 }
+   		 
+      //  $tasks = $stmt->get_result();
+      
+        $stmt->close();
+		//die(print_r($post));
+        return $post ;
+    }
+    
+    
+    
     public function AddAddress($user_id, $fname, $lname, $address, $phone, $pincode) {
 
         $response = array();
@@ -1207,16 +1310,64 @@ WHERE a.user_id = u.id AND a.user_id=$user_id AND a.status = 1
         }
     }
 
-    public function getServiceProviders($city_id, $category_id) {
+    
+        public function getUserCouponHistory($user_id) {
 
 
 
 
-        $stmt = $this->conn->prepare("SELECT s.*, c.city_name
+        $stmt = $this->conn->prepare("SELECT o.id as offer_id, o.name as offer_name, r.id as retailer_id, r.name as retailer_name, cr.created_at, cr.status
+FROM offer_categories o, retailers r, coupon_requests cr
+ WHERE
+	o.id = 	cr.id_offer
+    AND r.id = cr.id_retailer
+    AND cr.id_user = $user_id
+	AND cr.status = 1
+     ");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $stmt->close();
+
+
+        $item_array = array();
+
+        while ($row = $result->fetch_assoc()) {
+
+
+            foreach ($row as $key => $value) {
+                $item_temp[$key] = $value;
+            }
+
+            array_push($item_array, $item_temp);
+        }
+
+
+        return $item_array;
+    }
+    
+    
+    public function getServiceProviders($city_id, $category_id,$serach_query) {
+
+
+        if($serach_query != 'null'){
+              $stmt = $this->conn->prepare("SELECT s.*, c.city_name
+ FROM service_providers s, cities c, service_categories sc
+WHERE s.city_id = c.id AND s.category_id =sc.id AND s.city_id=$city_id
+AND s.name LIKE '%' '$serach_query' '%'
+    
+ AND s.status = 1 
+ ORDER BY name  ASC");
+              
+        }else{
+              $stmt = $this->conn->prepare("SELECT s.*, c.city_name
  FROM service_providers s, cities c, service_categories sc
 WHERE s.city_id = c.id AND s.category_id =sc.id AND s.city_id=$city_id AND s.category_id = $category_id 
  AND s.status = 1 
  ORDER BY name  ASC");
+        }
+            
+
+      
         $stmt->execute();
         $result = $stmt->get_result();
         $stmt->close();
@@ -1497,26 +1648,45 @@ AND od.order_id = " . $row['id'] . "");
         return $num_affected_rows > 0;
     }
 
-    public function getRetailers($city_id, $offer_category_id) {
+    public function getRetailers($city_id, $retailer_category_id,$search_query) {
+
+
+        if($search_query != 'null'){
+            
+                        $stmt = $this->conn->prepare("SELECT s.*, c.city_name, o.id as offer_category_id, o.name as offer_name
+            FROM retailers s, cities c, offer_categories o
+            WHERE s.city_id = c.id AND  s.offer_category_id = o.id AND s.city_id=$city_id  
+			AND s.name LIKE '%' '$search_query' '%'
+            AND s.status = 1 
+            ORDER BY name  ASC");
+            
+        }else{
+            
+            
+            if ($retailer_category_id == 'all') {
 
 
 
-        if ($offer_category_id == 'all') {
-
-
-
-            $stmt = $this->conn->prepare("SELECT s.*, c.city_name
- FROM retailers s, cities c
-WHERE s.city_id = c.id AND s.city_id=$city_id  
- AND s.status = 1 
-	ORDER BY name  ASC");
-        } else {
-            $stmt = $this->conn->prepare("SELECT s.*, c.city_name
- FROM retailers s, cities c, offer_categories sc
-WHERE s.city_id = c.id AND s.category_id =sc.id AND s.city_id=$city_id AND s.category_id = $offer_category_id 
- AND s.status = 1 
-	ORDER BY name  ASC");
+            $stmt = $this->conn->prepare("SELECT s.*, c.city_name, o.id as offer_category_id, o.name as offer_name
+            FROM retailers s, cities c, offer_categories o
+            WHERE s.city_id = c.id AND  s.offer_category_id = o.id AND s.city_id=$city_id  
+            AND s.status = 1 
+            ORDER BY name  ASC");
+            } 
+            else 
+                {
+            $stmt = $this->conn->prepare("SELECT s.*, c.city_name, o.id as offer_category_id, o.name as offer_name
+            FROM retailers s, cities c, retailer_categories sc , offer_categories o
+            WHERE s.city_id = c.id AND s.category_id =sc.id AND s.offer_category_id = o.id AND s.city_id=$city_id AND s.category_id = $retailer_category_id 
+            AND s.status = 1 
+            ORDER BY name  ASC");
+            
+    
+            }
+        
         }
+        
+
         $stmt->execute();
         $result = $stmt->get_result();
         $stmt->close();
@@ -1539,10 +1709,30 @@ WHERE s.city_id = c.id AND s.category_id =sc.id AND s.city_id=$city_id AND s.cat
         return $item_array;
     }
 
-    public function getProducts($category_id, $distrubutor_id) {
+    public function getProducts($category_id, $distrubutor_id, $search_query) 
+            {
+        
+        if($search_query != 'null'){
+            
+         
+            $qry = "SELECT p.*
+            FROM products p, shopping_categories sc
+            WHERE p.category_id = sc.id 
+            AND p.name LIKE '%' '$search_query' '%'
+            AND p.status = 1 
+            ORDER BY name  ASC";
+            
+            
+            $stmt = $this->conn->prepare($qry);
+            
+        }
+        else{
+            
+    
 
 
         if ($category_id != 'all' && $distrubutor_id == 'all') {
+            
             
             
             $stmt = $this->conn->prepare("SELECT p.*
@@ -1561,7 +1751,7 @@ WHERE p.category_id = sc.id AND p.category_id = " . $category_id . "
  ORDER BY name  ASC");
         }
 
-
+    }
 
         $stmt->execute();
         $result = $stmt->get_result();
@@ -1671,6 +1861,35 @@ WHERE p.category_id = sc.id AND p.category_id = " . $category_id . "
 
         return $item_array;
     }
+    
+    public function getUser($user_id) {
+
+
+
+
+        $stmt = $this->conn->prepare("SELECT * from users  
+    				WHERE id = $user_id ");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $stmt->close();
+
+
+        $item_array = array();
+
+        while ($row = $result->fetch_assoc()) {
+
+
+            foreach ($row as $key => $value) {
+                $item_temp[$key] = $value;
+            }
+
+            array_push($item_array, $item_temp);
+        }
+
+
+        return $item_array;
+    }
+    
 
     public function deleteAdSlider($id) {
         $stmt = $this->conn->prepare("DELETE t FROM adsliders t WHERE id = $id");
